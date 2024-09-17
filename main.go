@@ -21,9 +21,9 @@ type TodoHandler struct {
 }
 
 func (h TodoHandler) printTodos() {
-    fmt.Printf("Id\t\tName\t\tDone\n")
+    fmt.Printf("Id\t\tName\t\t\t\tDone\n")
     for _, todo := range h.todos {
-        fmt.Printf("%d\t\t%s\t%v\n", todo.Id, todo.Text, todo.Done)
+        fmt.Printf("%d\t\t%s\t\t\t%v\n", todo.Id, todo.Text, todo.Done)
     }
 }
 
@@ -35,11 +35,27 @@ func (h TodoHandler) listTodos() {
     }
 }
 
-func (h *TodoHandler) addTodo(text string) {
-    if strings.Trim(text, " ") != "" {
-        todo := Todo { len(h.todos) + 1, text, false }
-        h.todos = append(h.todos, todo)
+func (h *TodoHandler) removeTodo(id string) {
+    n, err := strconv.Atoi(id)
+    if err != nil {
+        fmt.Println("Please provide a valid id")
     }
+    if n > len(h.todos) || n < 1 {
+        fmt.Println("No such task exists")
+        return
+    }
+    h.todos = append(h.todos[:n], h.todos[n+1:]...)
+    writeTodosToFile(*h, h.File)
+    fmt.Println("Todo removed successfully")
+}
+
+func (h *TodoHandler) addTodo(text string) {
+    if strings.Trim(text, " ") == "" {
+        fmt.Println("Please provide a valid task")
+        return
+    }
+    todo := Todo { len(h.todos) + 1, text, false }
+    h.todos = append(h.todos, todo)
     writeTodosToFile(*h, h.File)
     fmt.Println("Todo added successfully")
 }
@@ -117,15 +133,27 @@ func main() {
         return
     }
     command := os.Args[1]
+    checkArgument := func (prompt string) {
+        if len(os.Args) < 3 {
+            fmt.Println(prompt)
+            os.Exit(0)
+        }
+    }
     switch command {
         case "add":
+            checkArgument("Pleas provide a task string")
             handler.addTodo(os.Args[2])
         case "list":
             handler.listTodos()
         case "check":
+            checkArgument("Pleas provide the task id")
             handler.markTodo(os.Args[2])
         case "uncheck":
+            checkArgument("Pleas provide the task id")
             handler.unmarkTodo(os.Args[2])
+        case "remove":
+            checkArgument("No such task id")
+            handler.removeTodo(os.Args[2])
 
     }
 
